@@ -8,7 +8,7 @@ A production-ready, fully-featured AI chat application built entirely on Cloudfl
 
 ## 🌐 Live Demo
 
-**Try it now:** [https://cloudflare-ai-chat.mehtaakshat-27.workers.dev](https://cloudflare-ai-chat.mehtaakshat-27.workers.dev/)
+**Try it now:** [https://cf_ai_chat.mehtaakshat-27.workers.dev](https://cf_ai_chat.mehtaakshat-27.workers.dev/)
 
 ## 🌟 Features
 
@@ -110,12 +110,12 @@ A production-ready, fully-featured AI chat application built entirely on Cloudfl
    npm run deploy
    ```
 
-   Your app will be live at `https://cloudflare-ai-chat.your-subdomain.workers.dev`
+   Your app will be live at `https://cf_ai_chat.your-subdomain.workers.dev`
 
 ## 📁 Project Structure
 
 ```
-cloudflare-ai-chat/
+cf_ai_chat/
 ├── src/
 │   ├── index.ts          # Main Worker entry point
 │   ├── agent.ts          # AI agent with workflow logic
@@ -399,7 +399,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Akshat Mehta**
 - GitHub: [@Akshatmehta278](https://github.com/Akshatmehta278)
-- Project: [Cloudflare AI Chat Assistant](https://github.com/Akshatmehta278/cloudflare-ai-chat)
+- Project: [Cloudflare AI Chat Assistant](https://github.com/Akshatmehta278/cf_ai_chat)
 
 ## 🌟 Show Your Support
 
