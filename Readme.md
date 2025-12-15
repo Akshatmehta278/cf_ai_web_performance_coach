@@ -6,6 +6,12 @@ A production-ready, fully-featured AI chat application built entirely on Cloudfl
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## 🌐 Live Demo
+
+**Try it now:** [https://cloudflare-ai-chat.your-subdomain.workers.dev](https://cloudflare-ai-chat.your-subdomain.workers.dev)
+
+> 💡 **Note:** Replace with your actual deployment URL after running `npm run deploy`
+
 ## 🌟 Features
 
 ### Core Capabilities
