@@ -8,7 +8,7 @@ A production-ready, fully-featured AI chat application built entirely on Cloudfl
 
 ## 🌐 Live Demo
 
-**Try it now:** [https://cf_ai_chat.mehtaakshat-27.workers.dev](https://cf_ai_chat.mehtaakshat-27.workers.dev/)
+**Try it now:** [https://cloudflare-ai-chat.mehtaakshat-27.workers.dev](https://cloudflare-ai-chat.mehtaakshat-27.workers.dev/)
 
 ## 🌟 Features
 
