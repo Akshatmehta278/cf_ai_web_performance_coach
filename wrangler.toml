@@ -1,15 +1,7 @@
-#############################################
-# BASIC WORKER CONFIG
-#############################################
-
 name = "cf_ai_web_performance_coach"
-main = "./src/server.ts"
+main = "src/server.ts"
 compatibility_date = "2024-10-01"
 compatibility_flags = ["nodejs_compat"]
-
-#############################################
-# DURABLE OBJECTS
-#############################################
 
 [durable_objects]
 bindings = [
@@ -20,21 +12,7 @@ bindings = [
 tag = "v1"
 new_sqlite_classes = ["Chat"]
 
-#############################################
-# OBSERVABILITY
-#############################################
-
-[observability]
-enabled = true
-head_sampling_rate = 1
-
 [observability.logs]
 enabled = true
 persist = true
 invocation_logs = true
-head_sampling_rate = 1
-
-[observability.traces]
-enabled = false
-persist = true
-head_sampling_rate = 1
