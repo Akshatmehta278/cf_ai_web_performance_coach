@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare AI Chat Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .message-container {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-md border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-gradient-to-r from-orange-500 to-pink-500 p-2 rounded-lg">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Cloudflare AI Chat</h1>
+                            <p class="text-sm text-gray-600">Powered by Workers AI + Llama 3.3</p>
+                        </div>
+                    </div>
+                    <button id="clearBtn" class="px-4 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                        Clear History
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Info Banner -->
+        <div class="bg-blue-600 text-white">
+            <div class="max-w-4xl mx-auto px-4 py-3">
+                <div class="text-sm">
+                    <strong>Features:</strong> ✓ Workers AI (Llama 3.3) ✓ D1 Database ✓ Durable Objects ✓ Real-time Chat
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto">
+            <div class="max-w-4xl mx-auto px-4 py-6">
+                <div id="messages"></div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="bg-white border-t border-gray-200 shadow-lg">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="messageInput"
+                        placeholder="Type your message... (Press Enter to send)"
+                        class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <button 
+                        id="sendBtn"
+                        class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-lg hover:from-indigo-700 hover:to-blue-700 font-medium shadow-md"
+                    >
+                        Send
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    Session: <span id="sessionId"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Session management
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        document.getElementById('sessionId').textContent = sessionId;
+
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        let conversationHistory = [];
+
+        // Load history on page load
+        loadHistory();
+
+        // Send message
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Clear history
+        clearBtn.addEventListener('click', async () => {
+            if (confirm('Clear all conversation history?')) {
+                await fetch(`/api/history?sessionId=${sessionId}`, { method: 'DELETE' });
+                conversationHistory = [];
+                messagesDiv.innerHTML = '';
+                showWelcome();
+            }
+        });
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`/api/history?sessionId=${sessionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.messages.length > 0) {
+                    conversationHistory = data.messages.map(m => ({
+                        role: m.role,
+                        content: m.content
+                    }));
+                    data.messages.forEach(msg => displayMessage(msg.role, msg.content, msg.timestamp));
+                } else {
+                    showWelcome();
+                }
+            } catch (error) {
+                console.error('Failed to load history:', error);
+                showWelcome();
+            }
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Display user message
+            displayMessage('user', message);
+            conversationHistory.push({ role: 'user', content: message });
+            messageInput.value = '';
+            sendBtn.disabled = true;
+
+            // Show loading
+            const loadingId = showLoading();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        sessionId,
+                        conversationHistory
+                    })
+                });
+
+                const data = await response.json();
+                removeLoading(loadingId);
+
+                if (data.success) {
+                    displayMessage('assistant', data.message.content, data.message.timestamp);
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: data.message.content
+                    });
+                } else {
+                    displayMessage('assistant', 'Error: ' + data.error, null, true);
+                }
+            } catch (error) {
+                removeLoading(loadingId);
+                displayMessage('assistant', 'Error: Failed to connect to server', null, true);
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        function displayMessage(role, content, timestamp, isError = false) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message-container flex ${role === 'user' ? 'justify-end' : 'justify-start'} mb-4`;
+            
+            const bgColor = role === 'user' 
+                ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white'
+                : isError 
+                    ? 'bg-red-50 text-red-900 border border-red-200'
+                    : 'bg-white text-gray-900';
+
+            msgDiv.innerHTML = `
+                <div class="max-w-2xl rounded-2xl px-4 py-3 shadow-md ${bgColor}">
+                    <div class="text-sm font-semibold mb-1 opacity-75">
+                        ${role === 'user' ? 'You' : 'AI Assistant'}
+                    </div>
+                    <div class="whitespace-pre-wrap break-words">${escapeHtml(content)}</div>
+                    ${timestamp ? `<div class="text-xs mt-2 ${role === 'user' ? 'text-blue-100' : 'text-gray-500'}">
+                        ${new Date(timestamp).toLocaleTimeString()}
+                    </div>` : ''}
+                </div>
+            `;
+
+            messagesDiv.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function showLoading() {
+            const loadingId = 'loading-' + Date.now();
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'message-container flex justify-start mb-4';
+            loadingDiv.innerHTML = `
+                <div class="bg-white rounded-2xl px-4 py-3 shadow-md">
+                    <div class="flex items-center gap-2 text-gray-600">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                        <span>AI is thinking...</span>
+                    </div>
+                </div>
+            `;
+            messagesDiv.appendChild(loadingDiv);
+            scrollToBottom();
+            return loadingId;
+        }
+
+        function removeLoading(loadingId) {
+            document.getElementById(loadingId)?.remove();
+        }
+
+        function showWelcome() {
+            messagesDiv.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="bg-white rounded-2xl shadow-lg p-8 max-w-md mx-auto">
+                        <svg class="w-16 h-16 mx-auto text-indigo-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Welcome!</h2>
+                        <p class="text-gray-600 mb-4">Cloudflare AI Chat powered by:</p>
+                        <ul class="text-left text-sm text-gray-700 space-y-2">
+                            <li>🤖 Workers AI with Llama 3.3</li>
+                            <li>💾 D1 Database for persistence</li>
+                            <li>⚙️ Workflow coordination</li>
+                            <li>💬 Real-time interface</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        function scrollToBottom() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

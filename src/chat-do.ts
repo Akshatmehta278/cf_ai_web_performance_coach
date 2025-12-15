@@ -1,9 +1,14 @@
 import { ChatAgent } from "./agent";
-import { AgentDO } from "agents";
 
-export class Chat extends AgentDO {
+export class Chat {
+  state: DurableObjectState;
+  env: any;
+  agent: ChatAgent;
+
   constructor(state: DurableObjectState, env: any) {
-    super(state, env, ChatAgent);
+    this.state = state;
+    this.env = env;
+    this.agent = new ChatAgent(state, env);
   }
 
   async fetch(req: Request): Promise<Response> {
@@ -11,14 +16,12 @@ export class Chat extends AgentDO {
 
     if (url.pathname === "/chat" && req.method === "POST") {
       const body = await req.json();
-      const result = await this.agent.respond(body.message);
-      return Response.json(result);
+      return Response.json(await this.agent.respond(body.message));
     }
 
     if (url.pathname === "/analyze" && req.method === "POST") {
       const body = await req.json();
-      const result = await this.agent.analyzeWebsite(body.url);
-      return Response.json(result);
+      return Response.json(await this.agent.analyzeWebsite(body.url));
     }
 
     return new Response("Not found", { status: 404 });

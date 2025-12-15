@@ -1,1 +1,1 @@
-Initial prompt used to generate the agent.
+Initial prompt: Build a Cloudflare AI Web Performance Coach.
